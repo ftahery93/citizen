@@ -43,23 +43,37 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $validator = [
-            'email' => 'required|email|exists:employee',
-            'pasword' => 'required'
+            'user' => 'required',
+            'user.email' => 'required|email',
+            'user.password' => 'required'
         ];
         $checkForError = $this->utility->checkForErrorMessages($request, $validator, 422);
         if ($checkForError) {
             return $checkForError;
         }
-        $employee = Employee::where('email', $request->email)->get()->first();
-        $token = Authentication::where('user_id', $employee->id)->where('type', 2)->get()->first();
-        if (Hash::check($request->password, $employee->password)) {
-            return response()->json([
-                'employee' => $employee,
-                'access_token' => $token
+
+        $user = $request->user;
+        $employee = Employee::where('email', $user['email'])->get()->first();
+        if ($employee) {
+            $token = '' . $employee->id . '' . $this->access_token;
+            Authentication::create([
+                'user_id' => $employee->id,
+                'access_token' => $token,
+                'type' => 2
             ]);
+            if ($user['password'] == $employee->password) {
+                return response()->json([
+                    'employee' => $employee,
+                    'access_token' => $token
+                ]);
+            } else {
+                return response()->json([
+                    'error' => LanguageManagement::getLabel('invalid_credentials', "en"),
+                ], 404);
+            }
         } else {
             return response()->json([
-                'error' => LanguageManagement::getLabel('invalid_credentials', "en"),
+                'error' => LanguageManagement::getLabel('user_not_found', "en"),
             ], 404);
         }
     }
@@ -77,14 +91,14 @@ class AuthController extends Controller
 
         $employee = Employee::create([
             'email' => $request->email,
-            'password' => bcrypt($request->password),
+            'password' => $request->password,
         ]);
         $token = '' . $employee->id . '' . $this->access_token;
-        Authentication::create([
-            'user_id' => $employee->id,
-            'access_token' => $token,
-            'type' => 2
-        ]);
+        // Authentication::create([
+        //     'user_id' => $employee->id,
+        //     'access_token' => $token,
+        //     'type' => 2
+        // ]);
 
         return response()->json([
             'employee' => $employee,

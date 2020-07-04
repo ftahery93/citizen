@@ -8,5 +8,5 @@ class Employee extends Model
 {
     protected $table = "employee";
     protected $fillable = ['email', 'password'];
-    protected $hidden = ['created_at', 'updated_at'];
+    protected $hidden = ['created_at', 'updated_at', 'password'];
 }

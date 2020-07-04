@@ -19,6 +19,6 @@ class Issue extends Model
 
     public function getApprovedImageAttribute($value)
     {
-        return $value ? url('/public/uploads/issue_images/' . $value) : null;
+        return $value ? url('/public/uploads/approved_issue_images/' . $value) : null;
     }
 }

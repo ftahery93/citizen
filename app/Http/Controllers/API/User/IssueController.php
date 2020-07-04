@@ -55,10 +55,11 @@ class IssueController extends Controller
     public function reportIssue(Request $request)
     {
         $validator = [
-            'file' => 'required',
-            'description' => 'required',
-            'latitude' => 'required',
-            'longitude' => 'required',
+            'issue' => 'required',
+            'issue.file' => 'required',
+            'issue.description' => 'required',
+            'issue.latitude' => 'required',
+            'issue.longitude' => 'required',
         ];
 
         $checkForError = $this->utility->checkForErrorMessages($request, $validator, 422);
@@ -66,16 +67,36 @@ class IssueController extends Controller
             return $checkForError;
         }
 
-        if ($request->hasFile('file')) {
-            $icon = $request->file('file');
-            $filename = time() . '.' . $icon->getClientOriginalExtension();
-            $destinationPath = public_path('issue_images/');
-            $icon->move($destinationPath, $filename);
-            $request['image'] = $filename;
+        // if ($request->hasFile('file')) {
+        //     $icon = $request->file('file');
+        //     $filename = time() . '.' . $icon->getClientOriginalExtension();
+        //     $destinationPath = public_path('issue_images/');
+        //     $icon->move($destinationPath, $filename);
+        //     $request['image'] = $filename;
+        // }
+
+        $issue = $request->issue;
+
+        $file_data = $issue['file'];
+        $file_name = 'issue_image' . time() . '.png';
+
+        if ($file_data != null) {
+            Storage::disk('public')->put('issue_images/' . $file_name, base64_decode($file_data));
         }
 
-        $request['status'] = 1;
-        $issue = Issue::create($request->all());
+        $issue['status'] = 1;
+        $createdIssue = Issue::create([
+            'description' => $issue['description'],
+            'latitude' => $issue['latitude'],
+            'longitude' => $issue['longitude'],
+            'image' => $file_name,
+            'status' => 1,
+            'user_id' => $request->user_id,
+            'fullname' => $issue['fullname'] == null ? "" : $issue['fullname'],
+            'mobile' => $issue['mobile'] == null ? "" : $issue['mobile']
+        ]);
+
+        // $issue = Issue::create($request->all());
         return response()->json([
             'message' => LanguageManagement::getLabel('report_issue_success', 'en'),
         ]);
